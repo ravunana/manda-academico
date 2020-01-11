@@ -1,0 +1,152 @@
+entity Software(rv_software) {
+	InstituicaoEnsino String required,
+    tipoSistema String required, // DP
+    nif String required,
+    numeroValidacaoAGT Integer required, // DP
+    nome String maxlength(255) required,
+    versao String maxlength(30) required,
+    hashCode String required,
+    hashControl String required
+}
+
+entity LicencaSoftware(rv_licensa) {
+    tipoSubscricao String required, // MENSAL, SEMESTRAL, ANUAL
+    inicio ZonedDateTime required,
+    fim ZonedDateTime required,
+    data ZonedDateTime,
+    valor BigDecimal min(0) required,
+    codigo String unique required,
+    numeroUsuario Integer min(1),
+    numeroInstituicaoEnsino Integer min(1)
+}
+
+entity Todo(core_todo) {
+    descricao TextBlob required,
+    titulo String required unique,
+    dataInicio LocalDate,
+    dataConclusao LocalDate,
+    data ZonedDateTime
+}
+
+entity EntidadeSistema(core_entidade) {
+    nome String required unique // Sexo
+}
+
+entity Lookup(core_lookup) {
+    nome String unique required, // Masculino, Pai
+    sigla String unique required, // M, PAIA
+    descricao TextBlob,
+    usuario Boolean // nao
+}
+
+// inicio InstituicaoEnsino module
+entity InstituicaoEnsino(core_insituicao) {
+	nome String required unique,
+    logotipo ImageBlob required,
+    fundacao LocalDate,
+    numero String unique,
+    dimensao String,
+    carimbo AnyBlob
+    sede Boolean required,
+
+    // Localizacao
+    bairro String required,
+    rua String maxlength(200) required,
+    quarteirao String maxlength(10) required,
+    numeroPorta String maxlength(10)
+}
+
+entity Pessoa(core_pessoa) {
+    nome String required,
+    imagem ImageBlob,
+    pai String,
+    mae String,
+    nascimento LocalDate,
+
+    // contacto
+    contactoPrincipal String unique required,
+    contactoSecundario String unique,
+    email String unique,
+
+    // documentacao
+    numeroDocumento String unique,
+    nif String unique,
+    emissao LocalDate,
+    validade LocalDate,
+
+    // Morada
+    bairro String,
+    rua String maxlength(200),
+    quarteirao String maxlength(10),
+    numeroPorta String maxlength(10)
+}
+
+entity RelacionamentoPessoa(core_relacionamento_pessoa) {
+}
+
+entity AssinaturaDigital(core_assinatura_digital) {
+    tipo String required, // Director pedagogico, geral, coordenador
+    assinatura AnyBlob,
+    hashcode String unique,
+    data ZonedDateTime
+}
+
+entity ContactoInstituicao(core_contacto_instituicao) {
+	descricao String required,
+    contacto String unique required
+}
+
+relationship OneToMany {
+	InstituicaoEnsino to InstituicaoEnsino{hierarquia(nome)},
+    InstituicaoEnsino to ContactoInstituicao{InstituicaoEnsino(nome) required},
+    InstituicaoEnsino to LicencaSoftware{InstituicaoEnsino(nome) required},
+    InstituicaoEnsino to AssinaturaDigital{instituicao(nome) required },
+
+    Software to LicencaSoftware{software(nome)},
+    EntidadeSistema to Lookup{entidade(nome) required}
+}
+
+relationship ManyToOne {
+
+    InstituicaoEnsino{tipoVinculo(nome)} to Lookup,
+    InstituicaoEnsino{unidadePagadora(nome)} to Lookup,
+    InstituicaoEnsino{tipoInstalacao(nome)} to Lookup,
+    InstituicaoEnsino{provincia(nome)} to Lookup,
+    InstituicaoEnsino{municipio(nome)} to Lookup,
+
+    ContactoInstituicao{tipoContacto(nome) required} to Lookup,
+
+	Pessoa{tipoDocumento(nome)} to Lookup, // BI, CEDULA, PASSAPORTE
+	Pessoa{nacionalidade(nome)} to Lookup,
+	Pessoa{provincia(nome)} to Lookup,
+	Pessoa{municipio(nome)} to Lookup,
+	Pessoa{naturalidade(nome)} to Lookup,
+	Pessoa{localEmissao(nome)} to Lookup,
+	Pessoa{profissao(nome)} to Lookup,
+	Pessoa{cargo(nome)} to Lookup,
+	Pessoa{empresa(nome)} to Lookup,
+	Pessoa{situacaoAnterior(nome)} to Lookup,
+
+    RelacionamentoPessoa{pessoa(nome) required} to Pessoa,
+    RelacionamentoPessoa{parente(nome) required} to Pessoa,
+	RelacionamentoPessoa{grauParentesco(nome) required } to Lookup,
+
+	Todo{de(login) required } to User
+}
+
+/**
+ * One to one relationship.
+ */
+relationship OneToOne {
+	Pessoa{utilizador(login)} to User
+}
+
+relationship ManyToMany {
+    Todo{para(login) required } to User
+}
+
+dto * with mapstruct
+service * with serviceClass
+paginate * with pagination
+search * with elasticsearch
+filter InstituicaoEnsino, Lookup

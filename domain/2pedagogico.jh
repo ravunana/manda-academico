@@ -1,0 +1,112 @@
+entity Professor(cor_professor) {
+    numeroAgente String required unique,
+    bancoSalario String,
+    numeroConta String,
+    inss String,
+	ativo Boolean
+}
+
+entity Curso(pdg_curso) {
+	nome String required minlength(10) unique,
+	sigla String required minlength(3) maxlength(12) unique,
+	competencias TextBlob
+}
+
+entity PlanoCurricular(pdg_plano_curricular) {
+	terminal Boolean required
+}
+
+entity CriterioAvaliacao(pdg_criterio_avaliacao) {
+	aprovaCom Integer required min(0), // 4 dificiencias
+	reporvaCom Integer required min(0),
+	recursoCom Integer required min(0),
+	fazExame Boolean required,
+	fazRecurso Boolean required,
+	fazExameEspecial Boolean required,
+	numeroFaltaReprova Integer required min(0),
+	menorNota Double min(0) required,
+	maiorNota Double required min(0),
+	notaMinimaAprovacao Double min(0) required
+}
+
+entity Turma(pdg_turma) {
+	descricao String required unique,
+    anoLectivo Integer,
+    data ZonedDateTime,
+    abertura LocalDate,
+    encerramento LocalDate,
+    lotacao Integer required min(1),
+    coordenador String,
+	aberta Boolean
+}
+
+entity Horario(pdg_horario) {
+	inicio String required,
+	fim ZonedDateTime required,
+	data ZonedDateTime required,
+    anoLectivo Integer
+}
+
+entity PlanoActividade(pdg_plano_actividade) {
+	numeroActividade Integer unique min(1),
+	atividade String required,
+	objectivos TextBlob required,
+	de LocalDate required,
+	ate LocalDate required,
+	responsavel String required, // userID
+	local String,
+	observacao TextBlob,
+	participantes String, // Comunidade escolar, delegados de turma, professores, coordenadores, pessoal administrativo
+	coResponsavel String, // userID
+	anoLectivo Integer required
+}
+
+relationship OneToMany {
+	Curso to PlanoCurricular{curso(nome) required},
+	Curso to Turma{curso(nome) required},
+	Curso to PlanoActividade{curso(nome)},
+
+    Turma to Horario{turma(descricao) required},
+	Turma to PlanoActividade{turma(descricao)},
+
+	Professor to Horario{professor(numeroAgente)},
+	PlanoCurricular to Horario{planoCurricular}
+}
+
+relationship ManyToOne {
+
+	PlanoCurricular{tempoSemanal(nome) required } to Lookup,
+	PlanoCurricular{periodoLectivo(nome) required } to Lookup,
+	PlanoCurricular{componente(nome) required} to Lookup,
+    PlanoCurricular{disciplina(nome) required} to Lookup,
+    PlanoCurricular{classe(nome) required} to Lookup,
+
+	Turma{periodoLectivo(nome) required} to Lookup,
+	Turma{turno(nome) required} to Lookup,
+	Turma{sala(nome) required} to Lookup,
+    Turma{classe(nome) required} to Lookup,
+
+	Horario{diaSemana(nome) required} to Lookup,
+	Horario{categoria(nome) required} to Lookup, // AULA, PROVA
+
+	PlanoActividade{statusActividade(nome) required} to Lookup,
+	PlanoActividade{periodoLectivo(nome) required} to Lookup,
+	PlanoActividade{turno(nome)} to Lookup,
+	PlanoActividade{classe(nome)} to Lookup,
+
+    Curso{areaFormacao(nome) required} to Lookup
+}
+
+/**
+ * One to one relationship.
+ */
+relationship OneToOne {
+	CriterioAvaliacao{planoCurricular} to PlanoCurricular,
+    Professor{pessoa(nome) required } to Pessoa
+}
+
+dto * with mapstruct
+paginate * with pagination
+service * with serviceClass
+search * with elasticsearch
+filter Curso, PlanoCurricular, Turma, Horario, PlanoActividade

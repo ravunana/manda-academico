@@ -1,0 +1,103 @@
+entity Aula(cor_aula) {
+	data ZonedDateTime required,
+	sumario String required,
+	licao Integer required,
+	dada Boolean required
+}
+
+entity Chamada(cor_chamada) {
+    data ZonedDateTime required,
+    presente Boolean required
+}
+
+entity Dosificacao(cor_dosificacao) {
+    peridoLective String required, //Trimestre
+
+    objectivoGeral TextBlob required,
+
+    semanaLectiva Integer required,
+    de LocalDate required,
+    ate LocalDate required,
+
+    unidadeTematica String required,
+    conteudo TextBlob required,
+    procedimentoEnsino TextBlob required,
+    recursosDidaticos TextBlob required,
+    tempoAula Integer required, // em minutos Ex. 90 min
+    formaAvaliacao String required
+}
+
+entity PlanoAula(cor_plano_aula) {
+	objectivoGeral TextBlob required,
+	objectivoEspecifico TextBlob required,
+	conteudo TextBlob required,
+	estrategia TextBlob required,
+	actividades TextBlob required,
+	tempo ZonedDateTime required,
+	recursosEnsino TextBlob required,
+	avaliacao TextBlob required,
+	observacao TextBlob required,
+	bibliografia TextBlob required,
+	perfilEntrada TextBlob required,
+	perfilSaida TextBlob required,
+	anexo1 AnyBlob,
+	anexo2 AnyBlob,
+	anexo3 AnyBlob
+}
+
+entity CategoriaValiacao(cor_categoria_avaliacao) {
+	nome String required unique,
+	siglaInterna String unique,
+	siglaPauta String unique required
+}
+
+entity Nota(cor_nota) {
+	valor Double min(0) max(20) required,
+	data ZonedDateTime,
+    anoLectivo Integer,
+    periodoLectivo String
+}
+
+relationship OneToMany {
+	CategoriaValiacao to Nota{categoriaAvaliacao(nome)},
+	Dosificacao to PlanoAula{dossificacao},
+
+	Aluno to Nota{matricula(numeroProcesso) required },
+
+    Turma to Nota{turma(descricao) required},
+	Turma to Aula{turma(descricao) required},
+
+	Aula to Chamada{aula(data) required},
+	Aluno to Chamada{aluno(numeroProcesso) required}
+}
+
+/**
+ * Many to one relationship.
+ */
+relationship ManyToOne {
+	Aula{professor(login)} to User,
+
+	Nota{professor(login)} to User,
+    Nota{disciplina(nome) required} to Lookup,
+
+    PlanoAula{disciplina(nome) required} to Lookup,
+	PlanoAula{professor(login)} to User,
+
+	Dosificacao{disciplina(nome) required} to Lookup,
+	CategoriaValiacao{areaFormacao(nome) required} to Lookup
+}
+
+relationship ManyToMany {
+	Aula{planoAula} to PlanoAula{aulaPlanoAula},
+	PlanoAula{turma(descricao) required} to Turma{planoAulaTurma},
+
+	Dosificacao{curso(nome) required} to Curso{dosificacaoCurso},
+	Dosificacao{classe(nome) required} to Lookup{dosificacaoCLasse}
+}
+
+
+dto * with mapstruct
+paginate * with pagination
+service * with serviceClass
+search * with elasticsearch
+filter Professor, Aula, Dosificacao, Nota

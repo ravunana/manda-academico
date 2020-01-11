@@ -1,0 +1,99 @@
+// Pronto pagamento e Prestacoes (Ex, 1X, 2X, 3X, 4X, ...)
+// Forma de pagamento
+entity FormaLiquidacao(fin_forma_liquidacao) {
+    nome String unique required,
+    juro Double required min(0) max(100), // em porcentagem
+    prazoLiquidacao Integer required min(0) // em dias
+    quantidade Integer required min(1), // Numero de prestacoe 1,2,3,...N
+    icon String
+}
+
+entity CoordenadaBancaria(fin_coordenada_bancaria) {
+	descricao String required unique, // Nome do banco, Nome do caixa
+    proprietario String required,
+    numeroConta String unique required,
+    iban String unique,
+    ativo Boolean required
+}
+
+entity Emolumento(fin_emolumento) {
+    nome String required unique, /* Ex. PROPINA 10ª INFO/M */
+    montante BigDecimal required min(0),
+    montanteMulta Double required min(0), // porcentagem
+    tempoMulta Integer required min(0),
+    quantidade Double min(0)
+}
+
+entity Deposito(fin_deposito) {
+    numero String required unique,
+    dataDeposito LocalDate required,
+    montante BigDecimal min(0) required,
+    data ZonedDateTime required,
+    anexo AnyBlob
+}
+
+entity PagamentoEmolumento(fin_pagamento) {
+    data ZonedDateTime,
+    numero String unique required
+}
+
+entity EfeitoPagamento(fin_detalhe_pagamento) {
+    mensalidade Boolean required,
+    quantidade Integer required min(1),
+    montante BigDecimal required min(0),
+    desconto Double min(0), // porcentagem
+    multa Double min(0) , // porcentagem
+    juro Double min(0),
+    data ZonedDateTime,
+    vencimento LocalDate,
+    quitado Boolean required
+}
+
+entity ContaAluno(fin_conta_aluno) {
+    debito BigDecimal required min(0),
+    credito BigDecimal required min(0)
+}
+
+
+/**
+ * One to many relationship.
+ */
+relationship OneToMany {
+    Emolumento to EfeitoPagamento{emolumento(nome) required},
+
+    Aluno to PagamentoEmolumento{aluno(numeroProcesso) required },
+    Aluno to PagamentoEmolumento{aluno(numeroProcesso) required },
+    Aluno to ContaAluno{aluno(numeroProcesso) required}
+
+    FormaLiquidacao to PagamentoEmolumento{formaLiquidacao(nome) required },
+    PagamentoEmolumento to EfeitoPagamento{pagamento(numero) required},
+    CoordenadaBancaria to Deposito{bancoCaixa(descricao) required },
+    Curso to Emolumento{curso(nome)}
+}
+
+/**
+ * Many to one relationship.
+ */
+relationship ManyToOne {
+    Deposito{funcionario(login) required } to User,
+    Deposito{meio(nome)} to Lookup, // NUMERARIO, TRANSFERENCIA, TPA, DEPOSITO
+
+    EfeitoPagamento{funcionario(login) required } to User,
+
+    Emolumento{turno(nome)} to Lookup,
+    Emolumento{classe(nome)} to Lookup,
+
+    PagamentoEmolumento{estado(nome) required } to Lookup, // Liquidado, Por liquidar, A Liquidar, Necessita verificacao, Pendente
+    EfeitoPagamento{descricao(nome) required } to Lookup // MES; DISCIPLINA
+}
+
+relationship ManyToMany {
+    EfeitoPagamento{deposito(numero)} to Deposito{efeito},
+    Deposito{aluno(numeroProcesso)} to Aluno{deposito}
+}
+
+dto * with mapstruct
+paginate * with pagination
+service * with serviceClass
+search * with elasticsearch
+filter Deposito, Emolumento, PagamentoEmolumento, EfeitoPagamento
